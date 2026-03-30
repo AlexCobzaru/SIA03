@@ -1,3 +1,0 @@
-CREATE ROLE customers LOGIN PASSWORD 'customers';
-
-CREATE SCHEMA AUTHORIZATION customers;
