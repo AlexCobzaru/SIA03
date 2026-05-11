@@ -1,0 +1,26 @@
+----------------------------------------------------------------
+Mon May 11 16:23:41 EEST 2026:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.16.1.1 - (1901046): instance a816c00e-019e-1735-2e84-0000036a33f8 
+on database directory C:\Proiect_SIA03\support\dsa-study-case\metastore_db with class loader jdk.internal.loader.ClassLoaders$AppClassLoader@76ed5528 
+Loaded from file:/C:/Users/Alex/.m2/repository/org/apache/derby/derby/10.16.1.1/derby-10.16.1.1.jar
+java.vendor=Oracle Corporation
+java.runtime.version=21.0.10+8-LTS-217
+user.dir=C:\Proiect_SIA03\support\dsa-study-case
+os.name=Windows 10
+os.arch=amd64
+os.version=10.0
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
+----------------------------------------------------------------
+Mon May 11 16:23:45 EEST 2026:
+Booting Derby version The Apache Software Foundation - Apache Derby - 10.16.1.1 - (1901046): instance a8604102-019e-1735-2e84-0000036a33f8 
+on database directory memory:C:\Proiect_SIA03\support\dsa-study-case with class loader jdk.internal.loader.ClassLoaders$AppClassLoader@76ed5528 
+Loaded from file:/C:/Users/Alex/.m2/repository/org/apache/derby/derby/10.16.1.1/derby-10.16.1.1.jar
+java.vendor=Oracle Corporation
+java.runtime.version=21.0.10+8-LTS-217
+user.dir=C:\Proiect_SIA03\support\dsa-study-case
+os.name=Windows 10
+os.arch=amd64
+os.version=10.0
+derby.system.home=null
+Database Class Loader started - derby.database.classpath=''
