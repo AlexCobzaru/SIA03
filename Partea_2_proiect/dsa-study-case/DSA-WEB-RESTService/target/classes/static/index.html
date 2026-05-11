@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Fraud Monitoring Dashboard</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #111827;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 24px 40px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 30px;
+        }
+
+        header p {
+            margin: 8px 0 0;
+            font-size: 16px;
+            color: #d1d5db;
+        }
+
+        main {
+            padding: 30px 40px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 10px 14px;
+            border-radius: 8px;
+            background: #e5e7eb;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .status.ok {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            margin-bottom: 30px;
+        }
+
+        .card, .panel {
+            background: white;
+            border-radius: 14px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+            padding: 22px;
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 15px;
+            color: #6b7280;
+        }
+
+        .card .value {
+            margin-top: 14px;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 30px;
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            font-size: 22px;
+        }
+
+        .bar-row {
+            margin-bottom: 16px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .bar-bg {
+            width: 100%;
+            height: 20px;
+            background: #e5e7eb;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: #2563eb;
+            border-radius: 20px;
+        }
+
+        .bar-fill-danger {
+            background: #dc2626;
+        }
+
+        .table-wrapper {
+            max-height: 420px;
+            overflow: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        th {
+            background: #f9fafb;
+        }
+
+        @media (max-width: 1000px) {
+            .cards, .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header>
+    <h1>Sistem de analiză și monitorizare a tranzacțiilor bancare</h1>
+    <p>Dashboard Web pentru analiza fraudelor pe baza view-urilor SparkSQL expuse prin backend Java REST</p>
+</header>
+
+<main>
+    <div id="status" class="status">Se încarcă datele din backend-ul Java REST...</div>
+
+    <section class="cards">
+        <div class="card">
+            <h3>Total tranzacții</h3>
+            <div class="value" id="totalTransactions">-</div>
+        </div>
+
+        <div class="card">
+            <h3>Tranzacții frauduloase</h3>
+            <div class="value" id="fraudTransactions">-</div>
+        </div>
+
+        <div class="card">
+            <h3>Valoare totală tranzacții</h3>
+            <div class="value" id="totalAmount">-</div>
+        </div>
+
+        <div class="card">
+            <h3>Scor mediu de risc</h3>
+            <div class="value" id="avgRiskScore">-</div>
+        </div>
+    </section>
+
+    <section class="grid">
+        <div class="panel">
+            <h2>Fraude după tipul tranzacției</h2>
+            <div id="fraudByTypeChart"></div>
+        </div>
+
+        <div class="panel">
+            <h2>Analiză după status de risc și monedă</h2>
+            <div id="riskCurrencyChart"></div>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>View integrat: Client - Tranzacție - Risc</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Client ID</th>
+                    <th>Tip</th>
+                    <th>Sumă</th>
+                    <th>Fraudă</th>
+                    <th>Job</th>
+                    <th>Educație</th>
+                    <th>Monedă</th>
+                    <th>Status risc</th>
+                    <th>Scor risc</th>
+                </tr>
+                </thead>
+                <tbody id="transactionsTable"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<script>
+    const BASE_URL = "http://localhost:8096/DSA-WEB-RESTService/rest/OLAP";
+
+    const API = {
+        integratedView: `${BASE_URL}/CLIENT_TRANSACTION_RISK_VIEW`,
+        fraudByType: `${BASE_URL}/OLAP_FRAUD_BY_TYPE_SPARK`,
+        fraudByRisk: `${BASE_URL}/OLAP_FRAUD_BY_RISK_SPARK`
+    };
+
+    async function fetchData(url) {
+        const response = await fetch(url + "?t=" + Date.now(), {
+            method: "GET",
+            headers: {
+                "Accept": "application/json"
+            },
+            cache: "no-store"
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} pentru ${url}`);
+        }
+
+        return await response.json();
+    }
+
+    function formatNumber(value) {
+        if (value === null || value === undefined || isNaN(value)) {
+            return "-";
+        }
+
+        return Number(value).toLocaleString("ro-RO", {
+            maximumFractionDigits: 2
+        });
+    }
+
+    function updateCards(transactions) {
+        const totalTransactions = transactions.length;
+        const fraudTransactions = transactions.reduce((sum, row) => sum + Number(row.isFraud || 0), 0);
+        const totalAmount = transactions.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+
+        const riskScores = transactions
+            .map(row => Number(row.riskScore))
+            .filter(value => !isNaN(value));
+
+        const avgRiskScore = riskScores.length
+            ? riskScores.reduce((sum, value) => sum + value, 0) / riskScores.length
+            : 0;
+
+        document.getElementById("totalTransactions").textContent = formatNumber(totalTransactions);
+        document.getElementById("fraudTransactions").textContent = formatNumber(fraudTransactions);
+        document.getElementById("totalAmount").textContent = formatNumber(totalAmount);
+        document.getElementById("avgRiskScore").textContent = avgRiskScore.toFixed(2);
+    }
+
+    function renderTransactionsTable(transactions) {
+        const tbody = document.getElementById("transactionsTable");
+        tbody.innerHTML = "";
+
+        transactions.slice(0, 100).forEach(row => {
+            const tr = document.createElement("tr");
+
+            tr.innerHTML = `
+                <td>${row.clientId ?? ""}</td>
+                <td>${row.type ?? ""}</td>
+                <td>${formatNumber(row.amount)}</td>
+                <td>${row.isFraud ?? ""}</td>
+                <td>${row.job ?? ""}</td>
+                <td>${row.education ?? ""}</td>
+                <td>${row.currency ?? ""}</td>
+                <td>${row.status ?? ""}</td>
+                <td>${row.riskScore ?? ""}</td>
+            `;
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderBarChart(containerId, data, labelField, valueField, secondaryField) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = "";
+
+        const maxValue = Math.max(...data.map(row => Number(row[valueField] || 0)), 1);
+
+        data.forEach(row => {
+            const label = row[labelField];
+            const value = Number(row[valueField] || 0);
+            const percent = (value / maxValue) * 100;
+
+            const rowDiv = document.createElement("div");
+            rowDiv.className = "bar-row";
+
+            rowDiv.innerHTML = `
+                <div class="bar-label">
+                    <span>${label}</span>
+                    <span>${formatNumber(value)}${secondaryField ? " | " + secondaryField + ": " + formatNumber(row[secondaryField]) : ""}</span>
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width: ${percent}%"></div>
+                </div>
+            `;
+
+            container.appendChild(rowDiv);
+        });
+    }
+
+    function renderRiskChart(data) {
+        const preparedData = data.map(row => ({
+            label: `${row.status} / ${row.currency}`,
+            total_amount: Number(row.total_amount || 0),
+            avg_risk_score: Number(row.avg_risk_score || 0),
+            fraud_count: Number(row.fraud_count || 0)
+        }));
+
+        renderBarChart("riskCurrencyChart", preparedData, "label", "total_amount", "avg_risk_score");
+    }
+
+    async function initDashboard() {
+        const status = document.getElementById("status");
+
+        try {
+            status.textContent = "Se încarcă view-ul integrat Client - Tranzacție - Risc...";
+            const transactions = await fetchData(API.integratedView);
+            updateCards(transactions);
+            renderTransactionsTable(transactions);
+
+            status.textContent = "Se încarcă analiza fraudelor după tipul tranzacției...";
+            const fraudByType = await fetchData(API.fraudByType);
+            renderBarChart(
+                "fraudByTypeChart",
+                fraudByType,
+                "type",
+                "total_transactions",
+                "fraud_count"
+            );
+
+            status.textContent = "Se încarcă analiza după status de risc și monedă...";
+            const fraudByRisk = await fetchData(API.fraudByRisk);
+            renderRiskChart(fraudByRisk);
+
+            status.textContent = "Date încărcate cu succes din backend-ul Java REST.";
+            status.className = "status ok";
+
+        } catch (error) {
+            console.error(error);
+            status.textContent = error.message;
+            status.className = "status error";
+        }
+    }
+
+    initDashboard();
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+org\j4di\analytical\views\OLAP_FRAUD_BY_RISK_SPARK_Repository.class
+org\j4di\analytical\views\OLAP_VIEW_SALES_DEP_CIT_CUST.class
+org\j4di\analytical\views\OLAP_VIEW_SALES_DEP_CIT_CUST_Repository.class
+org\j4di\access\views\invoices\INVOICES_SALES_VIEW.class
+org\j4di\analytical\views\OLAP_FRAUD_BY_RISK_SPARK.class
+org\j4di\analytical\views\OLAP_FRAUD_BY_TYPE_SPARK.class
+org\j4di\analytical\views\OLAP_FRAUD_BY_TYPE_SPARK_Repository.class
+org\j4di\access\views\invoices\INVOICES_VIEW.class
+org\j4di\access\views\invoices\INVOICES_VIEW_Repository.class
+org\j4di\RESTViewService.class
+org\j4di\SpringBootWEBService.class
+org\j4di\integration\views\CLIENT_TRANSACTION_RISK_VIEW_Repository.class
+org\j4di\integration\views\CLIENT_TRANSACTION_RISK_VIEW.class
+org\j4di\security\BasicConfiguration.class
